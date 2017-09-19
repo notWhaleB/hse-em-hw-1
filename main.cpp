@@ -89,7 +89,7 @@ namespace Test {
         long double totalSeconds = 0.0;
 
         auto func = [fd, &buffer, blockSz] () {
-            return write(fd, buffer.get(), blockSz);
+            write(fd, buffer.get(), blockSz);
         };
 
         for (size_t i = 0; i != nBlocks; ++i) {
@@ -112,15 +112,35 @@ namespace Test {
         off_t nextPos = 0, offset = 0;
 
         auto func = [fd, &buffer, &offset, blockSz] () {
-            return lseek(fd, offset, SEEK_CUR);
+            lseek(fd, offset, SEEK_CUR);
+            write(fd, buffer.get(), blockSz);
         };
 
         for (size_t i = 0; i != nIter; ++i) {
             nextPos = rand_int(0, static_cast<int>(maxFileSz - blockSz));
             offset = nextPos - lseek(fd, 0, SEEK_CUR);
-
             totalSeconds += measure_time(func);
-            write(fd, buffer.get(), blockSz);
+        }
+
+        return 1e6 * totalSeconds / nIter;
+    }
+
+    long double rnd_read(int fd, size_t bufferSz, size_t nIter) {
+        std::unique_ptr<byte_t[]> buffer(new byte_t[bufferSz]);
+        long double totalSeconds = 0.0;
+        std::chrono::time_point<std::chrono::system_clock> start;
+        off_t nextPos = 0, offset = 0;
+        auto fileSz = static_cast<size_t>(lseek(fd, 0, SEEK_END));
+
+        auto func = [fd, &buffer, &offset, bufferSz] () {
+            lseek(fd, offset, SEEK_CUR);
+            read(fd, buffer.get(), bufferSz);
+        };
+
+        for (size_t i = 0; i != nIter; ++i) {
+            nextPos = rand_int(0, static_cast<int>(fileSz - bufferSz));
+            offset = nextPos - lseek(fd, 0, SEEK_CUR);
+            totalSeconds += measure_time(func);
         }
 
         return 1e6 * totalSeconds / nIter;
@@ -169,11 +189,19 @@ int main(int argc, char** argv) {
         std::cout << "Write speed: " << writeSpeed << " MiB/s" << std::endl;
 
         close(fd);
+    } else if (mode == "rnd-read") {
+        int fd = open("./tmp.bin", O_RDONLY | O_SYNC);
+
+        std::cout << "Info: Running random read test..." << std::endl;
+        long double readDelay = Test::rnd_read(fd, 1, 10000);
+        std::cout << "Read delay: " << readDelay << " µs" << std::endl;
+
+        close(fd);
     } else if (mode == "rnd-write") {
         int fd = open("./tmp.bin", O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
 
         std::cout << "Info: Running random write test..." << std::endl;
-        long double writeDelay = Test::rnd_write(fd, 64, 2048 * MiB, 10000);
+        long double writeDelay = Test::rnd_write(fd, 1, 2048 * MiB, 10000);
         std::cout << "Write delay: " << writeDelay << " µs" << std::endl;
 
         close(fd);
