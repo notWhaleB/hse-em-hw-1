@@ -8,14 +8,18 @@
 #include <sstream>
 #include <chrono>
 #include <memory>
+#include <vector>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <thread>
+#include <future>
 
 typedef unsigned char byte_t;
 
 const size_t KiB = 1024;
 const size_t MiB = 1024 * KiB;
 const size_t BUFFER_SZ = 256;
+const char *TEST_FILE_PATH = "./tmp";
 
 void drop_cache() {
 #ifdef __linux
@@ -151,7 +155,7 @@ int main(int argc, char** argv) {
     std::string mode;
     if (argc != 2) {
         std::cout << "Warning: invalid args, run with additional argument for mode." << std::endl;
-        std::cout << "Please choose (seq-read, seq-write, rnd-write): ";
+        std::cout << "Please choose (seq-read, seq-write, rnd-read, rnd-write): ";
         std::cin >> mode;
     } else {
         mode = argv[1];
@@ -174,7 +178,10 @@ int main(int argc, char** argv) {
     srandom(static_cast<unsigned int>(time(nullptr)));
 
     if (mode == "seq-read") {
-        int fd = open("./tmp.bin", O_RDONLY | O_SYNC);
+        int fd = open(TEST_FILE_PATH, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
+        Test::seq_write(fd, 1 * MiB, 1024);
+        close(fd);
+        fd = open(TEST_FILE_PATH, O_RDONLY | O_SYNC);
 
         std::cout << "Info: Running sequential read test..." << std::endl;
         long double readSpeed = Test::seq_read(fd, 1 * MiB);
@@ -182,7 +189,7 @@ int main(int argc, char** argv) {
 
         close(fd);
     } else if (mode == "seq-write") {
-        int fd = open("./tmp.bin", O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
+        int fd = open(TEST_FILE_PATH, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
 
         std::cout << "Info: Running sequential write test..." << std::endl;
         long double writeSpeed = Test::seq_write(fd, 1 * MiB, 512);
@@ -190,21 +197,50 @@ int main(int argc, char** argv) {
 
         close(fd);
     } else if (mode == "rnd-read") {
-        int fd = open("./tmp.bin", O_RDONLY | O_SYNC);
+        int fd = open(TEST_FILE_PATH, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
+        Test::seq_write(fd, 1 * MiB, 1024);
+        close(fd);
+        fd = open(TEST_FILE_PATH, O_RDONLY | O_SYNC);
 
         std::cout << "Info: Running random read test..." << std::endl;
-        long double readDelay = Test::rnd_read(fd, 1, 10000);
-        std::cout << "Read delay: " << readDelay << " µs" << std::endl;
+        long double readLatency = Test::rnd_read(fd, 1, 10000);
+        std::cout << "Read latency: " << readLatency << " µs" << std::endl;
 
         close(fd);
     } else if (mode == "rnd-write") {
-        int fd = open("./tmp.bin", O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
+        int fd = open(TEST_FILE_PATH, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
 
         std::cout << "Info: Running random write test..." << std::endl;
-        long double writeDelay = Test::rnd_write(fd, 1, 2048 * MiB, 10000);
-        std::cout << "Write delay: " << writeDelay << " µs" << std::endl;
+        long double writeLatency = Test::rnd_write(fd, 1, 2048 * MiB, 10000);
+        std::cout << "Write latency: " << writeLatency << " µs" << std::endl;
 
         close(fd);
+    } else if (mode == "rnd-read-parallel") {
+        for (size_t i = 0; i != 8; ++i) {
+            char path[32];
+            snprintf(path, sizeof(path), "%s%zu", TEST_FILE_PATH, i);
+            int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
+            Test::seq_write(fd, 1 * MiB, 256);
+            close(fd);
+        }
+
+        std::cout << "Info: Running parallel random read test..." << std::endl;
+
+        std::vector<std::pair<int, std::future<long double>>> futures;
+        for (size_t i = 0; i != 8; ++i) {
+            char path[32];
+            snprintf(path, sizeof(path), "%s%zu", TEST_FILE_PATH, i);
+            int fd = open(TEST_FILE_PATH, O_RDONLY | O_SYNC);
+            futures.emplace_back(std::make_pair(fd, std::async(Test::rnd_read, fd, 1, 1250)));
+        }
+
+        long double totalLatency = 0.0;
+        for (auto &i : futures) {
+            totalLatency += i.second.get();
+            close(i.first);
+        }
+
+        std::cout << "Read latency: " << totalLatency / futures.size() << " µs" << std::endl;
     } else {
         std::cout << "Incorrect mode " << mode << "." << std::endl;
     }
