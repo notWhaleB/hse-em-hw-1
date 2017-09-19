@@ -43,6 +43,8 @@ void drop_cache() {
 #endif
     }
 
+    std::cout << "Info: Cache has been dropped." << std::endl;
+
     pclose(file);
 }
 
@@ -170,9 +172,6 @@ int main(int argc, char** argv) {
         std::cin >> ans;
 
         if (ans != "y") return 0;
-    } else {
-        drop_cache();
-        std::cout << "Info: Cache has been dropped." << std::endl;
     }
 
     srandom(static_cast<unsigned int>(time(nullptr)));
@@ -181,6 +180,8 @@ int main(int argc, char** argv) {
         int fd = open(TEST_FILE_PATH, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
         Test::seq_write(fd, 1 * MiB, 1024);
         close(fd);
+
+        if (isRoot) drop_cache();
         fd = open(TEST_FILE_PATH, O_RDONLY | O_SYNC);
 
         std::cout << "Info: Running sequential read test..." << std::endl;
@@ -189,6 +190,7 @@ int main(int argc, char** argv) {
 
         close(fd);
     } else if (mode == "seq-write") {
+        if (isRoot) drop_cache();
         int fd = open(TEST_FILE_PATH, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
 
         std::cout << "Info: Running sequential write test..." << std::endl;
@@ -200,6 +202,8 @@ int main(int argc, char** argv) {
         int fd = open(TEST_FILE_PATH, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
         Test::seq_write(fd, 1 * MiB, 1024);
         close(fd);
+
+        if (isRoot) drop_cache();
         fd = open(TEST_FILE_PATH, O_RDONLY | O_SYNC);
 
         std::cout << "Info: Running random read test..." << std::endl;
@@ -208,6 +212,7 @@ int main(int argc, char** argv) {
 
         close(fd);
     } else if (mode == "rnd-write") {
+        if (isRoot) drop_cache();
         int fd = open(TEST_FILE_PATH, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
 
         std::cout << "Info: Running random write test..." << std::endl;
@@ -224,6 +229,7 @@ int main(int argc, char** argv) {
             close(fd);
         }
 
+        if (isRoot) drop_cache();
         std::cout << "Info: Running parallel random read test..." << std::endl;
 
         std::vector<std::pair<int, std::future<long double>>> futures;
