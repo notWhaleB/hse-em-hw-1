@@ -11,11 +11,11 @@ const size_t BUFFER_SZ = 4 * MiB;
 const char *const TEST_FILE_PATH = "./tmp";
 
 #ifdef __linux
-const char *DISK_MOUNT = "/dev/sda1";
+const char *const DISK_MOUNT = "/dev/sda1";
 #elif __APPLE__
 const char *const DISK_MOUNT = "/dev/disk0";
 #else
-const char *DISK_MOUNT = "";
+const char *const DISK_MOUNT = "";
 #endif
 
 const size_t N_TEST_BLOCKS = 0x100000;

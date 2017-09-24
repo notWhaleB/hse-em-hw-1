@@ -23,6 +23,8 @@ public:
     void rnd_read();
     void rnd_write();
     void rnd_read_parallel();
+    void rnd_write_parallel();
+    void rnd_mixed_parallel();
 
     ~Test() = default;
 
@@ -41,6 +43,9 @@ private:
     static long double _sequential_write(int, size_t, size_t);
     static long double _random_read(int, size_t, size_t);
     static long double _random_write(int, size_t, size_t, size_t);
+
+    static long double _rnd_read_parallel(const Test *, bool);
+    static long double _rnd_write_parallel(const Test *, bool);
 };
 
 #endif //EM_HW_1_TESTS_H

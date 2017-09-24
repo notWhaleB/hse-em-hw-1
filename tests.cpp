@@ -57,22 +57,27 @@ void Test::rnd_write() {
 }
 
 void Test::rnd_read_parallel() {
+    _rnd_read_parallel(this, false);
+}
+
+long double Test::_rnd_read_parallel(const Test *cls, bool quiet) {
     size_t nThreads = std::thread::hardware_concurrency();
     std::vector<std::pair<int, const std::string>> files;
-    size_t nBlocks = std::max(_nBlocks / nThreads, (unsigned long)(0x40000));
+    size_t nBlocks = std::max(cls->_nBlocks / nThreads, (unsigned long)(0x40000));
 
 
     for (size_t i = 0; i != nThreads; ++i) {
-        const std::string path = allocate_sample_file(_blockSz * nBlocks, true);
-        files.emplace_back(std::make_pair(open(path.c_str(), _RD_POL), path));
+        const std::string path = allocate_sample_file(cls->_blockSz * nBlocks, true);
+        files.emplace_back(std::make_pair(open(path.c_str(), cls->_RD_POL), path));
     }
-    if (_dropCache) drop_cache();
+    if (cls->_dropCache) drop_cache();
 
-    std::cout << "Info: Running parallel random read test..." << std::endl;
+    if (!quiet) std::cout << "Info: Running parallel random read test..." << std::endl;
 
     std::vector<std::future<long double>> futures;
     for (auto &i : files) {
-        futures.emplace_back(std::async(_random_read, i.first, _blockSz, _nRndIter));
+        futures.emplace_back(std::async(std::launch::async, _random_read,
+                                        i.first, cls->_blockSz, cls->_nRndIter));
     }
 
     long double totalLatency = 0.0;
@@ -85,7 +90,64 @@ void Test::rnd_read_parallel() {
         unlink(i.second.c_str());
     }
 
-    std::cout << "Read latency: " << totalLatency / futures.size() << " µs" << std::endl;
+    long double readLatency = totalLatency / futures.size();
+    if (!quiet) std::cout << "Read latency: " << readLatency << " µs" << std::endl;
+
+    return readLatency;
+}
+
+void Test::rnd_write_parallel() {
+    _rnd_write_parallel(this, false);
+}
+
+long double Test::_rnd_write_parallel(const Test *cls, bool quiet) {
+    size_t nThreads = std::thread::hardware_concurrency();
+    std::vector<std::pair<int, const std::string>> files;
+    size_t nBlocks = std::max(cls->_nBlocks / nThreads, (unsigned long)(0x40000));
+
+    for (size_t i = 0; i != nThreads; ++i) {
+        const std::string path = allocate_sample_file(0, false);
+        files.emplace_back(std::make_pair(open(path.c_str(), cls->_RD_POL), path));
+    }
+    if (cls->_dropCache) drop_cache();
+
+    if (!quiet) std::cout << "Info: Running parallel random write test..." << std::endl;
+
+    std::vector<std::future<long double>> futures;
+    for (auto &i : files) {
+        futures.emplace_back(std::async(std::launch::async, _random_write,
+                                        i.first, cls->_blockSz, cls->_blockSz * nBlocks, cls->_nRndIter));
+    }
+
+    long double totalLatency = 0.0;
+    for (auto &i : futures) {
+        totalLatency += i.get();
+    }
+
+    for (auto &i : files) {
+        close(i.first);
+        unlink(i.second.c_str());
+    }
+
+    long double writeLatency = totalLatency / futures.size();
+    if (!quiet) std::cout << "Write latency: " << writeLatency << " µs" << std::endl;
+
+    return writeLatency;
+}
+
+void Test::rnd_mixed_parallel() {
+    if (_dropCache) drop_cache();
+    bool tmp = _dropCache;
+    _dropCache = false;
+
+    std::future<long double> readFuture = std::async(std::launch::async, _rnd_read_parallel, this, true);
+    std::future<long double> writeFuture = std::async(std::launch::async, _rnd_write_parallel, this, true);
+
+    long double latency = (readFuture.get() + writeFuture.get()) / 2;
+
+    _dropCache = tmp;
+
+    std::cout << "Mixed read+write latency: " << latency << " µs" << std::endl;
 }
 
 long double Test::_sequential_read(int fd, size_t bufferSz) {

@@ -10,7 +10,9 @@
 #include <chrono>
 #include <random>
 
-#ifdef __APPLE__
+#ifdef __linux
+#include <linux/fs.h>
+#elif __APPLE__
 #include <sys/disk.h>
 #endif
 

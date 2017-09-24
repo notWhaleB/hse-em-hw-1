@@ -35,6 +35,10 @@ int main(int argc, char** argv) {
         tests.rnd_write();
     } else if (mode == "rnd-read-parallel") {
         tests.rnd_read_parallel();
+    } else if (mode == "rnd-write-parallel") {
+        tests.rnd_write_parallel();
+    } else if (mode == "rnd-mixed-parallel") {
+        tests.rnd_mixed_parallel();
     } else {
         std::cout << "Incorrect mode " << mode << "." << std::endl;
     }
