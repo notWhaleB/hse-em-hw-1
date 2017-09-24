@@ -175,7 +175,7 @@ long double Test::_sequential_write(int fd, size_t blockSz, size_t nBlocks) {
     long double totalSeconds = 0.0;
 
     auto func = [fd, &buffer, blockSz] () {
-        write(fd, buffer.get(), blockSz);
+        assert(write(fd, buffer.get(), blockSz) >= 0);
         fsync(fd);
     };
 
@@ -196,7 +196,7 @@ long double Test::_random_read(int fd, size_t bufferSz, size_t nIter) {
 
     auto func = [fd, &buffer, &offset, bufferSz] () {
         lseek(fd, offset, SEEK_CUR);
-        read(fd, buffer.get(), bufferSz);
+        assert(read(fd, buffer.get(), bufferSz) >= 0);
     };
 
     for (size_t i = 0; i != nIter; ++i) {
@@ -221,7 +221,7 @@ long double Test::_random_write(int fd, size_t blockSz, size_t maxFileSz, size_t
 
     auto func = [fd, &buffer, &offset, blockSz] () {
         lseek(fd, offset, SEEK_CUR);
-        write(fd, buffer.get(), blockSz);
+        assert(write(fd, buffer.get(), blockSz) >= 0);
         fsync(fd);
     };
 

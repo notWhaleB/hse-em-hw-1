@@ -7,6 +7,7 @@
 
 #include <unistd.h>
 #include <memory>
+#include <cassert>
 #include <string>
 #include <iostream>
 #include <thread>

@@ -16,7 +16,7 @@ const std::string allocate_sample_file(size_t sz, bool create) {
 
     int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRUSR | S_IWUSR);
     lseek(fd, static_cast<off_t>(sz), SEEK_SET);
-    write(fd, "1", 1);
+    assert(write(fd, "0", 1) >= 0);
     fsync(fd);
     close(fd);
 
