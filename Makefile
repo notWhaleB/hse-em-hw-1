@@ -1,9 +1,9 @@
-all: run
+all: build run
 
 build:
 	g++ main.cpp util.cpp generators.cpp tests.cpp -O2 -std=c++11 -o main -lpthread
 
-run: build
+run:
 	./main seq-read
 	./main seq-write
 	./main rnd-read

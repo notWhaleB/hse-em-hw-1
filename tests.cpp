@@ -46,7 +46,7 @@ void Test::rnd_write() {
     const std::string path = allocate_sample_file(0, false);
     if (_dropCache) drop_cache();
 
-    int fd = open(TEST_FILE_PATH, _WR_POL, _CREAT_ACCS_POL);
+    int fd = open(path.c_str(), _WR_POL, _CREAT_ACCS_POL);
 
     std::cout << "Info: Running random write test..." << std::endl;
     long double writeLatency = _random_write(fd, _blockSz, _blockSz * _nBlocks, _nRndIter);
