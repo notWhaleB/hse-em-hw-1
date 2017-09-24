@@ -12,7 +12,7 @@ const size_t disk_block_size() {
     int dev = open(DISK_MOUNT, O_RDONLY);
 
     if (ioctl(dev, _IOCTL, &physBlockSz) == -1) {
-        printf("Warning. Can't get physical block size on device %s, set to 512.\n", DISK_MOUNT);
+        printf("Warning: Can't get physical block size on device %s, set to 512.\n", DISK_MOUNT);
         physBlockSz = 512;
     }
     size_t blockSz = physBlockSz;
