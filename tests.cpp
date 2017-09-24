@@ -107,7 +107,7 @@ long double Test::_rnd_write_parallel(const Test *cls, bool quiet) {
 
     for (size_t i = 0; i != nThreads; ++i) {
         const std::string path = allocate_sample_file(0, false);
-        files.emplace_back(std::make_pair(open(path.c_str(), cls->_RD_POL), path));
+        files.emplace_back(std::make_pair(open(path.c_str(), cls->_WR_POL, cls->_CREAT_ACCS_POL), path));
     }
     if (cls->_dropCache) drop_cache();
 
