@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <unistd.h>
+#include <memory>
 #include <cassert>
 #include <fcntl.h>
 #include <string>
