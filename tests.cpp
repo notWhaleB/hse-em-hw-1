@@ -1,63 +1,71 @@
 #include "tests.h"
 
-void Test::seq_read() {
+long double Test::seq_read(bool quiet) {
     const std::string path = allocate_sample_file(_blockSz * _nBlocks, true);
     if (_dropCache) drop_cache();
 
     int fd = open(path.c_str(), _RD_POL);
 
-    std::cout << "Info: Running sequential read test..." << std::endl;
+    if (!quiet) std::cout << "Info: Running sequential read test..." << std::endl;
     long double readSpeed = _sequential_read(fd, 4 * MiB);
     close(fd);
     unlink(path.c_str());
 
-    std::cout << "Read speed: " << readSpeed << " MiB/s" << std::endl;
+    if (!quiet) std::cout << "Read speed: " << readSpeed << " MiB/s" << std::endl;
+
+    return readSpeed;
 }
 
-void Test::seq_write() {
+long double Test::seq_write(bool quiet) {
     const std::string path = allocate_sample_file(0, false);
     if (_dropCache) drop_cache();
 
     int fd = open(path.c_str(), _WR_POL, _CREAT_ACCS_POL);
 
-    std::cout << "Info: Running sequential write test..." << std::endl;
+    if (!quiet) std::cout << "Info: Running sequential write test..." << std::endl;
     long double writeSpeed = _sequential_write(fd, 4 * MiB, (_nBlocks * _blockSz) / (4 * MiB));
     close(fd);
     unlink(path.c_str());
 
-    std::cout << "Write speed: " << writeSpeed << " MiB/s" << std::endl;
+    if (!quiet) std::cout << "Write speed: " << writeSpeed << " MiB/s" << std::endl;
+
+    return writeSpeed;
 }
 
-void Test::rnd_read() {
+long double Test::rnd_read(bool quiet) {
     const std::string path = allocate_sample_file(_blockSz * _nBlocks, true);
     if (_dropCache) drop_cache();
 
     int fd = open(path.c_str(), _RD_POL);
 
-    std::cout << "Info: Running random read test..." << std::endl;
+    if (!quiet) std::cout << "Info: Running random read test..." << std::endl;
     long double readLatency = _random_read(fd, _blockSz, _nRndIter);
     close(fd);
     unlink(path.c_str());
 
-    std::cout << "Read latency: " << readLatency << " µs" << std::endl;
+    if (!quiet) std::cout << "Read latency: " << readLatency << " µs" << std::endl;
+
+    return readLatency;
 }
 
-void Test::rnd_write() {
+long double Test::rnd_write(bool quiet) {
     const std::string path = allocate_sample_file(0, false);
     if (_dropCache) drop_cache();
 
     int fd = open(path.c_str(), _WR_POL, _CREAT_ACCS_POL);
 
-    std::cout << "Info: Running random write test..." << std::endl;
+    if (!quiet) std::cout << "Info: Running random write test..." << std::endl;
     long double writeLatency = _random_write(fd, _blockSz, _blockSz * _nBlocks, _nRndIter);
     close(fd);
     unlink(path.c_str());
 
-    std::cout << "Write latency: " << writeLatency << " µs" << std::endl;
+    if (!quiet) std::cout << "Write latency: " << writeLatency << " µs" << std::endl;
+
+    return writeLatency;
 }
 
-void Test::rnd_read_parallel() {
-    _rnd_read_parallel(this, false);
+long double Test::rnd_read_parallel(bool quiet) {
+    return _rnd_read_parallel(this, quiet);
 }
 
 long double Test::_rnd_read_parallel(const Test *cls, bool quiet) {
@@ -96,8 +104,8 @@ long double Test::_rnd_read_parallel(const Test *cls, bool quiet) {
     return readLatency;
 }
 
-void Test::rnd_write_parallel() {
-    _rnd_write_parallel(this, false);
+long double Test::rnd_write_parallel(bool quiet) {
+    return _rnd_write_parallel(this, quiet);
 }
 
 long double Test::_rnd_write_parallel(const Test *cls, bool quiet) {
@@ -135,7 +143,7 @@ long double Test::_rnd_write_parallel(const Test *cls, bool quiet) {
     return writeLatency;
 }
 
-void Test::rnd_mixed_parallel() {
+long double Test::rnd_mixed_parallel(bool quiet) {
     if (_dropCache) drop_cache();
     bool tmp = _dropCache;
     _dropCache = false;
@@ -147,7 +155,9 @@ void Test::rnd_mixed_parallel() {
 
     _dropCache = tmp;
 
-    std::cout << "Mixed read+write latency: " << latency << " µs" << std::endl;
+    if (!quiet) std::cout << "Mixed read+write latency: " << latency << " µs" << std::endl;
+
+    return latency;
 }
 
 long double Test::_sequential_read(int fd, size_t bufferSz) {

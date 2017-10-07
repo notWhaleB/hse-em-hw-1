@@ -9,9 +9,12 @@
 #include <memory>
 #include <cassert>
 #include <string>
+#include <vector>
 #include <iostream>
 #include <thread>
 #include <future>
+#include <functional>
+#include <math.h>
 
 class Test {
 public:
@@ -19,13 +22,35 @@ public:
         : _blockSz(blockSz), _nBlocks(nBlocks), _nRndIter(nRndIter),
           _bufferSz(bufferSz), _dropCache(dropCache) {};
 
-    void seq_read();
-    void seq_write();
-    void rnd_read();
-    void rnd_write();
-    void rnd_read_parallel();
-    void rnd_write_parallel();
-    void rnd_mixed_parallel();
+    long double seq_read(bool);
+    long double seq_write(bool);
+    long double rnd_read(bool);
+    long double rnd_write(bool);
+    long double rnd_read_parallel(bool);
+    long double rnd_write_parallel(bool);
+    long double rnd_mixed_parallel(bool);
+
+    template <typename Func>
+    static void several_run(Func func, size_t num, const char *logTemplate) {
+        assert(num > 0);
+
+        std::vector<long double> results, sqDiff;
+
+        for (size_t i = 0; i != num; ++i) {
+            long double res = func();
+            results.push_back(res);
+        }
+
+        long double avg = std::accumulate(results.begin(), results.end(), 0.0) / num;
+
+        for (auto &res : results) {
+            sqDiff.push_back(std::pow(res - avg, 2.0));
+        }
+
+        long double stdDev = std::sqrt(std::accumulate(sqDiff.begin(), sqDiff.end(), 0.0) / num);
+
+        printf(logTemplate, avg, stdDev);
+    }
 
     ~Test() = default;
 

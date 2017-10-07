@@ -47,7 +47,7 @@ void drop_cache() {
 #endif
     }
 
-    printf("Info: Cache has been dropped.\n");
+    if (VERBOSE) printf("Info: Cache has been dropped.\n");
 
     pclose(file);
 }

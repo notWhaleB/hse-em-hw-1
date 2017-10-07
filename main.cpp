@@ -4,7 +4,8 @@ int main(int argc, char** argv) {
     std::string mode;
     if (argc != 2) {
         std::cout << "Warning: invalid args, run with additional argument for mode." << std::endl;
-        std::cout << "Please choose (seq-read, seq-write, rnd-read, rnd-write): ";
+        std::cout << "Please choose (seq-read, seq-write, rnd-read, rnd-write, ";
+        std::cout << "rnd-read-parallel, rnd-write-parallel, rnd-mixed-parallel): ";
         std::cin >> mode;
     } else {
         mode = argv[1];
@@ -25,20 +26,35 @@ int main(int argc, char** argv) {
 
     Test tests(disk_block_size(), N_TEST_BLOCKS, N_RND_ITERS, BUFFER_SZ, isRoot);
 
+    std::cout << "Running tests..." << std::endl;
     if (mode == "seq-read") {
-        tests.seq_read();
+        tests.several_run([&tests] () -> long double {
+            return tests.seq_read(!VERBOSE);
+        }, N_TESTS, "Avg read speed: %.2Lf MiB/s, StdDev: %.2Lf MiB/s.\n");
     } else if (mode == "seq-write") {
-        tests.seq_write();
+        tests.several_run([&tests] () -> long double {
+            return tests.seq_write(!VERBOSE);
+        }, N_TESTS, "Avg write speed: %.2Lf MiB/s, StdDev: %.2Lf MiB/s.\n");
     } else if (mode == "rnd-read") {
-        tests.rnd_read();
+        tests.several_run([&tests] () -> long double {
+            return tests.rnd_read(!VERBOSE);
+        }, N_TESTS, "Avg read latency: %.2Lf µs, StdDev: %.2Lf µs.\n");
     } else if (mode == "rnd-write") {
-        tests.rnd_write();
+        tests.several_run([&tests] () -> long double {
+            return tests.rnd_write(!VERBOSE);
+        }, N_TESTS, "Avg write latency: %.2Lf µs, StdDev: %.2Lf µs.\n");
     } else if (mode == "rnd-read-parallel") {
-        tests.rnd_read_parallel();
+        tests.several_run([&tests] () -> long double {
+            return tests.rnd_read_parallel(!VERBOSE);
+        }, N_TESTS, "Avg read latency: %.2Lf µs, StdDev: %.2Lf µs.\n");
     } else if (mode == "rnd-write-parallel") {
-        tests.rnd_write_parallel();
+        tests.several_run([&tests] () -> long double {
+            return tests.rnd_write_parallel(!VERBOSE);
+        }, N_TESTS, "Avg write latency: %.2Lf µs, StdDev: %.2Lf µs.\n");
     } else if (mode == "rnd-mixed-parallel") {
-        tests.rnd_mixed_parallel();
+        tests.several_run([&tests] () -> long double {
+            return tests.rnd_mixed_parallel(!VERBOSE);
+        }, N_TESTS, "Avg read+write latency: %.2Lf µs, StdDev: %.2Lf µs.\n");
     } else {
         std::cout << "Incorrect mode " << mode << "." << std::endl;
     }
