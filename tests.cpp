@@ -69,7 +69,7 @@ long double Test::rnd_read_parallel(bool quiet) {
 }
 
 long double Test::_rnd_read_parallel(const Test *cls, bool quiet) {
-    size_t nThreads = std::thread::hardware_concurrency();
+    size_t nThreads = N_THREADS;
     std::vector<std::pair<int, const std::string>> files;
     size_t nBlocks = std::max(cls->_nBlocks / nThreads, (unsigned long)(0x40000));
 
@@ -109,7 +109,7 @@ long double Test::rnd_write_parallel(bool quiet) {
 }
 
 long double Test::_rnd_write_parallel(const Test *cls, bool quiet) {
-    size_t nThreads = std::thread::hardware_concurrency();
+    size_t nThreads = N_THREADS;
     std::vector<std::pair<int, const std::string>> files;
     size_t nBlocks = std::max(cls->_nBlocks / nThreads, (unsigned long)(0x40000));
 

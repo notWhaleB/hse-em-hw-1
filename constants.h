@@ -21,6 +21,7 @@ const char *const DISK_MOUNT = "";
 const size_t N_TEST_BLOCKS = 0x100000;
 const size_t N_RND_ITERS = 10000;
 const size_t N_TESTS = 3;
+const size_t N_THREADS = 4;
 
 // Set false to see only Avg and StdDev
 const bool VERBOSE = false;
